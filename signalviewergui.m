@@ -59,7 +59,9 @@ handles.file= 0;
 handles.scaling= 1;
 handles.scale_checker_old=1;
 handles.scale_checker_new=1;
+
 axes(handles.axes1);
+
 % Update handles structure
 guidata(hObject, handles);
 
@@ -113,38 +115,85 @@ function play_toggle_Callback(hObject, eventdata, handles)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 %handles.on_screen=zeros(floor((size(handles.signal,1)/handles.scaling)),1);
-
-if handles.scale_checker_new~=handles.scale_checker_old
-    handles.current=1;
-    handles.indep_current=1;
-end
-handles.scale_checker_old=handles.scaling;
 handles.button_state = get(hObject,'Value');
+if handles.button_state == get(hObject,'Max')
+    set(handles.modeMenu,'Enable','off');
+    set(handles.scalingMenu,'Enable','off');
+elseif handles.button_state == get(hObject,'Min')
+    set(handles.modeMenu,'Enable','on');
+    set(handles.scalingMenu,'Enable','on');
+end
+
+
 if (handles.mode==2)
-    handles.button_state = get(hObject,'Value');
     set(handles.listbox,'String','Initializing Dynamic Mode');
 while (handles.current<size(handles.signal,1) && handles.button_state == get(hObject,'Max'))
+    
     handles.button_state = get(hObject,'Value');
     
-    handles.on_screen(handles.indep_current,1)=handles.signal(handles.current,1);
-    plot(handles.on_screen);
+    handles.on_screen_dynamic_play(handles.indep_current,1)=handles.signal(handles.current,1);
+    
+    plot(handles.on_screen_dynamic_play,'Color',[0 1 0]);
+    
     handles.current=handles.current+1;
     handles.indep_current=handles.indep_current+1;
+    set(handles.axes1,'Color','black');
+    set(handles.axes1,'GridColor',[0 204/255 0]);
+    set(handles.axes1,'MinorGridAlpha',0.5);
+    set(handles.axes1,'XMinorGrid','on');
+    set(handles.axes1,'YMinorGrid','on');
+    set(handles.axes1,'XColor',[0 204/255 0]);
+    set(handles.axes1,'YColor',[0 204/255 0]);
+    set(handles.axes1,'XLim',[handles.current-(size(handles.signal,1)/handles.scaling)/2,handles.current+(size(handles.signal,1)/handles.scaling)/2]);
+    set(handles.axes1,'YLim',[min(handles.signal) max(handles.signal)]);
+    set(handles.listbox,'String',(handles.current/size(handles.signal,1))/100);
+    %set(handles.axes1,'CameraTarget',[handles.current,0,0]);
+    %set(handles.axes1,'DataAspectRatio',[handles.current/handles.scaling,1,1]);
     drawnow limitrate
 end
 handles.button_state = get(hObject,'Value');
 if (handles.button_state == get(hObject,'Min'))
-    plot(handles.on_screen);
+    %if (handles.indep_current==size(handles.on_screen_dynamic_play,1))
+    %set(handles.axes1,'CameraPosition',[handles.focus*(size(handles.signal,1)/handles.scaling),0,0]);
+    %handles.focus=handles.focus+1;
+    %handles.indep_current=1;
+    %end
+    set(handles.modeMenu,'Enable','on');
+    set(handles.scalingMenu,'Enable','on');
+
+    plot(handles.on_screen_dynamic_play,'Color',[0 1 0]);
+    
+    set(handles.axes1,'Color','black');
+    set(handles.axes1,'GridColor',[0 204/255 0]);
+    set(handles.axes1,'MinorGridAlpha',0.5);
+    set(handles.axes1,'XMinorGrid','on');
+    set(handles.axes1,'YMinorGrid','on');
+    set(handles.axes1,'XColor',[0 204/255 0]);
+    set(handles.axes1,'YColor',[0 204/255 0]);
+    set(handles.listbox,'String',(handles.current/size(handles.signal,1))/100);
+    set(handles.axes1,'YLim',[min(handles.signal) max(handles.signal)]);
+    set(handles.axes1,'XLim',[handles.current-(size(handles.signal,1)/handles.scaling)/2,handles.current+(size(handles.signal,1)/handles.scaling)/2]);
 end
 elseif (handles.mode==1)
-    set(handles.previous,'Enable','on');
-    set(handles.next,'Enable','on');
+    
     set(handles.listbox,'String','Initializing Static Mode');
+     set(handles.modeMenu,'Enable','on');
+    set(handles.scalingMenu,'Enable','on');
     %You need to figure out how to plot
     %handles.signal(sliderValue-(sliderValue/2)):sliderValue+(sliderValue/2),1)
     %and to move this plot to the slider callback function
     %also figure out how to insert the scaling to the static mode
-    plot(handles.signal);
+    
+    plot(handles.signal,'Color',[0 1 0]);
+    set(handles.axes1,'GridColor',[0 204/255 0]);
+    set(handles.axes1,'MinorGridAlpha',0.5);
+    set(handles.axes1,'XMinorGrid','on');
+    set(handles.axes1,'YMinorGrid','on');
+    set(handles.axes1,'XColor',[0 204/255 0]);
+    set(handles.axes1,'YColor',[0 204/255 0]);
+    set(handles.axes1,'Color','black');
+    set(handles.axes1,'XLim',[0,(size(handles.signal,1)/handles.scaling)]);
+    set(handles.axes1,'YLim',[min(handles.signal) max(handles.signal)]);
 end
 
 guidata(hObject,handles);
@@ -274,12 +323,12 @@ end
 function browse_button_Callback(hObject, eventdata, handles)
 % hObject    handle to browse_button (see GCBO)
 handles.current=1;
+handles.focus=1;
 handles.indep_current=1;
 [handles.file,handles.filename]= uigetfile('*.csv;*.xls;*.xlsx');
 if ( handles.file ~= 0)
 handles.signal= xlsread([handles.filename,handles.file]);
 set(handles.listbox,'String',{handles.file,handles.filename,size(handles.signal,1)});
-set(handles.modeMenu,'Enable','on');
 set(handles.scalingMenu,'Enable','on');
 end
  
@@ -332,10 +381,22 @@ switch contents_string
         
     case 'x16'
         handles.scaling=16;
+        
+    case 'x32'
+        handles.scaling=32;
+        
+    case 'Select Scale'
+        set(handles.listbox,'String','Please specify a scale');
+end
+handles.on_screen_dynamic_play=zeros(floor((size(handles.signal,1)/handles.scaling)),1);
+handles.on_screen_dynamic_pause=zeros(floor((size(handles.signal,1)/handles.scaling)),1);
+handles.scale_checker_new=handles.scaling;
+handles.current=1;
+handles.indep_current=1;
+if ~strcmp(contents_string,'Select Scale')
+    set(handles.modeMenu,'Enable','on');
 end
 
-handles.on_screen=zeros(floor((size(handles.signal,1)/handles.scaling)),1);
-handles.scale_checker_new=handles.scaling;
 guidata(hObject,handles);
 % Hints: contents = cellstr(get(hObject,'String')) returns scalingMenu contents as cell array
 %        contents{get(hObject,'Value')} returns selected item from scalingMenu
